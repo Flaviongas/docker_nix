@@ -66,16 +66,26 @@
   # List packages installed in system profile. To search, run:
   # $ nix search wget
   environment.systemPackages = with pkgs; [
-    vim # Do not forget to add an editor to edit configuration.nix! The Nano editor is also installed by default.
+    vim
     wget
-git
+    git
+    lazydocker
+    bottom
   ];
 
-programs.neovim = {
+programs={
+neovim = {
 enable = true;
 defaultEditor = true;
 viAlias = true;
 vimAlias = true;
+};
+nh = {
+    enable = true;
+    clean.enable = true;
+    clean.extraArgs = "--keep-since 4d --keep 3";
+  };
+
 };
 
   # Some programs need SUID wrappers, can be configured further or are
@@ -88,21 +98,10 @@ vimAlias = true;
 
   # List services that you want to enable:
 
-  # Enable the OpenSSH daemon.
-   services.openssh.enable = true;
-
-  # Open ports in the firewall.
-  # networking.firewall.allowedTCPPorts = [ ... ];
-  # networking.firewall.allowedUDPPorts = [ ... ];
-  # Or disable the firewall altogether.
-  # networking.firewall.enable = false;
-
-  # This value determines the NixOS release from which the default
-  # settings for stateful data, like file locations and database versions
-  # on your system were taken. It‘s perfectly fine and recommended to leave
-  # this value at the release version of the first install of this system.
-  # Before changing this value read the documentation for this option
-  # (e.g. man configuration.nix or on https://nixos.org/nixos/options.html).
+   services={
+   openssh.enable = true;
+   };
+  nix.settings.experimental-features = ["nix-command" "flakes"];
  systemd.services.cloudflare = {
     wantedBy = ["multi-user.target"];
     after = ["systemd-resolved.service"];
@@ -122,6 +121,17 @@ systemd.services.uptime = {
     wantedBy = ["multi-user.target"];
     after = ["systemd-resolved.service" "docker.service" "docker.socket"];
     script = ''${pkgs.docker}/bin/docker compose -f /home/flavio02/uptime-kuma/docker-compose.yml up'';
+    serviceConfig = {
+      Restart = "always";
+      User = "root";
+      Group = "root";
+    };
+  };
+
+systemd.services.portainer = {
+    wantedBy = ["multi-user.target"];
+    after = ["systemd-resolved.service" "docker.service" "docker.socket"];
+    script = ''${pkgs.docker}/bin/docker compose -f /home/flavio02/portainer/docker-compose.yml up'';
     serviceConfig = {
       Restart = "always";
       User = "root";
